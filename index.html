@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>工作娱乐双模式助手</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="brand">
+        <span class="brand-mark">G</span>
+        <div>
+          <strong>目标助手</strong>
+          <small>结果为导向</small>
+        </div>
+      </div>
+
+      <nav class="mode-nav" aria-label="主菜单">
+        <section class="nav-group is-open" data-mode="work">
+          <button class="mode-button is-active" type="button" data-mode-button="work">
+            <span class="mode-dot work-dot"></span>
+            <span>
+              <strong>工作</strong>
+              <small>提升自己</small>
+            </span>
+          </button>
+          <div class="child-nav">
+            <button class="child-button is-active" type="button" data-tab="wechat">公众号</button>
+            <button class="child-button" type="button" data-tab="douyin">抖音</button>
+            <button class="child-button" type="button" data-tab="xhs">小红书</button>
+            <button class="child-button" type="button" data-tab="novel">小说</button>
+            <button class="child-button" type="button" data-tab="study">学习</button>
+          </div>
+        </section>
+
+        <section class="nav-group" data-mode="fun">
+          <button class="mode-button" type="button" data-mode-button="fun">
+            <span class="mode-dot fun-dot"></span>
+            <span>
+              <strong>娱乐</strong>
+              <small>做个有趣的大人</small>
+            </span>
+          </button>
+          <div class="child-nav">
+            <button class="child-button" type="button" data-tab="dance">跳舞</button>
+            <button class="child-button" type="button" data-tab="music">音乐</button>
+            <button class="child-button" type="button" data-tab="reading">读书</button>
+          </div>
+        </section>
+
+        <section class="nav-group" data-mode="summary">
+          <button class="mode-button" type="button" data-mode-button="summary">
+            <span class="mode-dot" style="background:#7c5ce7;"></span>
+            <span>
+              <strong>总结</strong>
+              <small>每日回顾</small>
+            </span>
+          </button>
+          <div class="child-nav">
+            <button class="child-button" type="button" data-tab="daily-summary">今日数据</button>
+          </div>
+        </section>
+      </nav>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <div>
+          <p id="mode-kicker">工作 / 提升自己</p>
+          <h1 id="page-title">公众号爆款拆解</h1>
+        </div>
+        <div class="status-pill" id="status-pill">本地工作台</div>
+      </header>
+
+      <section class="dashboard-strip" aria-label="今日目标">
+        <article>
+          <span>工作产出</span>
+          <strong id="work-output-count">0</strong>
+          <small>份分析结果</small>
+        </article>
+        <article>
+          <span>娱乐排期</span>
+          <strong id="plan-count">0</strong>
+          <small>个进行中项目</small>
+        </article>
+        <article>
+          <span>阅读目标</span>
+          <strong id="reading-progress">0/4</strong>
+          <small>本月完成</small>
+        </article>
+      </section>
+
+      <div id="panels">
+        <section class="panel is-active" id="panel-wechat" data-title="公众号爆款拆解" data-kicker="工作 / 提升自己">
+          <div class="workbench two-column">
+            <form class="task-card" data-form="wechat">
+              <div class="card-head">
+                <span class="label">输入</span>
+                <h2>公众号内容截图</h2>
+                <p>上传截图或粘贴文章标题/链接，生成爆款点和可模仿选题。</p>
+              </div>
+              <label class="upload-box">
+                <input type="file" accept="image/*" data-file="wechat">
+                <span>上传截图</span>
+                <small data-file-name="wechat">PNG / JPG / WEBP</small>
+              </label>
+              <input class="field" name="keyword" placeholder="文章标题、关键词或链接">
+              <textarea class="field" name="notes" placeholder="可补充你观察到的标题、阅读量、评论关键词"></textarea>
+              <button class="primary-button" type="submit">生成拆解</button>
+            </form>
+            <article class="result-card" id="wechat-result"></article>
+          </div>
+        </section>
+
+        <section class="panel" id="panel-douyin" data-title="抖音视频爆款分析" data-kicker="工作 / 提升自己">
+          <div class="workbench two-column">
+            <form class="task-card" data-form="douyin">
+              <div class="card-head">
+                <span class="label">输入</span>
+                <h2>抖音分享链接</h2>
+                <p>粘贴视频链接后，输出内容定位、爆点和复刻建议。</p>
+              </div>
+              <input class="field" name="url" placeholder="粘贴抖音分享链接">
+              <textarea class="field" name="notes" placeholder="可补充视频主题、评论区高赞内容或你想学习的部分"></textarea>
+              <button class="primary-button" type="submit">分析视频</button>
+            </form>
+            <article class="result-card" id="douyin-result"></article>
+          </div>
+        </section>
+
+        <section class="panel" id="panel-xhs" data-title="小红书图文结构分析" data-kicker="工作 / 提升自己">
+          <div class="workbench two-column">
+            <form class="task-card" data-form="xhs">
+              <div class="card-head">
+                <span class="label">输入</span>
+                <h2>小红书文章图片</h2>
+                <p>上传封面和正文截图，分析排版结构与爆款元素。</p>
+              </div>
+              <label class="upload-box">
+                <input type="file" accept="image/*" multiple data-file="xhs">
+                <span>上传图片</span>
+                <small data-file-name="xhs">支持多张</small>
+              </label>
+              <textarea class="field" name="notes" placeholder="可补充点赞、收藏、评论或账号定位"></textarea>
+              <button class="primary-button" type="submit">分析排版</button>
+            </form>
+            <article class="result-card" id="xhs-result"></article>
+          </div>
+        </section>
+
+        <section class="panel" id="panel-novel" data-title="豆瓣热门小说" data-kicker="工作 / 提升自己">
+          <div class="workbench">
+            <div class="task-card compact">
+              <div class="card-head">
+                <span class="label">今日</span>
+                <h2>热门小说与讨论点</h2>
+                <p>静态版内置热门样例；接入后端后可定时抓取豆瓣榜单。</p>
+              </div>
+              <button class="primary-button fit" type="button" id="refresh-novels">刷新榜单</button>
+            </div>
+            <div class="list-grid" id="novel-list"></div>
+          </div>
+        </section>
+
+        <section class="panel" id="panel-study" data-title="学习截图摘取" data-kicker="工作 / 提升自己">
+          <div class="workbench two-column">
+            <form class="task-card" data-form="study">
+              <div class="card-head">
+                <span class="label">输入</span>
+                <h2>学习资料截图</h2>
+                <p>上传截图并补充主题，整理成可复习的关键文本。</p>
+              </div>
+              <label class="upload-box">
+                <input type="file" accept="image/*" data-file="study">
+                <span>上传截图</span>
+                <small data-file-name="study">网页 / PPT / 文档</small>
+              </label>
+              <input class="field" name="topic" placeholder="资料主题，例如：产品增长、英语语法">
+              <textarea class="field" name="notes" placeholder="也可以先粘贴截图里的文字，便于当前静态版整理"></textarea>
+              <button class="primary-button" type="submit">提取关键信息</button>
+            </form>
+            <article class="result-card" id="study-result"></article>
+          </div>
+        </section>
+
+        <section class="panel" id="panel-dance" data-title="跳舞每周排期" data-kicker="娱乐 / 做个有趣的大人">
+          <div class="workbench two-column">
+            <form class="task-card" data-form="dance">
+              <div class="card-head">
+                <span class="label fun">排期</span>
+                <h2>每周学会一首舞蹈</h2>
+                <p>上传视频或填写舞蹈名称，自动加入后续周计划。</p>
+              </div>
+              <label class="upload-box fun-upload">
+                <input type="file" accept="video/*" data-file="dance">
+                <span>上传视频</span>
+                <small data-file-name="dance">MP4 / MOV</small>
+              </label>
+              <input class="field" name="title" placeholder="舞蹈名称，例如：APT 副歌编舞">
+              <button class="fun-button" type="submit">加入周计划</button>
+            </form>
+            <article class="schedule-card">
+              <div class="card-head">
+                <span class="label fun">List</span>
+                <h2>跳舞周计划</h2>
+              </div>
+              <div class="schedule-list" id="dance-list"></div>
+            </article>
+          </div>
+        </section>
+
+        <section class="panel" id="panel-music" data-title="音乐双周排期" data-kicker="娱乐 / 做个有趣的大人">
+          <div class="workbench two-column">
+            <form class="task-card" data-form="music">
+              <div class="card-head">
+                <span class="label fun">排期</span>
+                <h2>每两周学会一首歌</h2>
+                <p>上传乐谱或填写曲目，自动安排双周练习计划。</p>
+              </div>
+              <label class="upload-box fun-upload">
+                <input type="file" accept="image/*,.pdf" data-file="music">
+                <span>上传乐谱</span>
+                <small data-file-name="music">图片 / PDF</small>
+              </label>
+              <input class="field" name="title" placeholder="歌曲名称，例如：晴天">
+              <button class="fun-button" type="submit">加入双周计划</button>
+            </form>
+            <article class="schedule-card">
+              <div class="card-head">
+                <span class="label fun">List</span>
+                <h2>音乐双周计划</h2>
+              </div>
+              <div class="schedule-list" id="music-list"></div>
+            </article>
+          </div>
+        </section>
+
+        <section class="panel" id="panel-reading" data-title="每月阅读列表" data-kicker="娱乐 / 做个有趣的大人">
+          <div class="workbench two-column">
+            <form class="task-card" data-form="reading">
+              <div class="card-head">
+                <span class="label fun">目标</span>
+                <h2>每月读 4 本书</h2>
+                <p>输入书名加入本月列表，也可以一键加入推荐书。</p>
+              </div>
+              <input class="field" name="title" placeholder="输入书名">
+              <input class="field" name="author" placeholder="作者，可选">
+              <button class="fun-button" type="submit">加入本月阅读</button>
+              <button class="secondary-button" type="button" id="auto-books">加入推荐组合</button>
+            </form>
+            <article class="schedule-card">
+              <div class="card-head">
+                <span class="label fun">Books</span>
+                <h2>本月阅读列表</h2>
+              </div>
+              <div class="schedule-list" id="reading-list"></div>
+            </article>
+          </div>
+        </section>
+
+        <section class="panel" id="panel-daily-summary" data-title="每日数据总结" data-kicker="总结 / 每日回顾">
+          <div class="workbench">
+            <div class="task-card compact" style="background:linear-gradient(135deg,#f8f6ff,#ede8ff);border-color:#d5c8f0;">
+              <div class="card-head">
+                <span class="label" style="background:#ede8ff;color:#7c5ce7;">总结</span>
+                <h2 id="summary-date-title">今日数据总结</h2>
+                <p>每日 23:00 自动汇总当天工作与娱乐活动数据。包含各项操作次数和进度概览。</p>
+              </div>
+              <div style="display:flex;gap:8px;">
+                <button class="secondary-button fit" type="button" id="refresh-summary">手动汇总</button>
+                <button class="primary-button fit" type="button" id="copy-summary" style="width:auto;">复制总结</button>
+              </div>
+            </div>
+            <div id="daily-summary-content" style="display:grid;gap:12px;"></div>
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <script src="app.js"></script>
+</body>
+</html>
