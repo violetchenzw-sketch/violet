@@ -279,23 +279,117 @@ function section(title, content) {
 }
 
 function renderNovels(showMessage = true) {
-  const novels = [
-    ["太白金星有点烦", "马伯庸", "西游与职场叙事结合，大家讨论最多的是流程、背锅和沟通成本。"],
-    ["我在北京送快递", "胡安焉", "真实劳动经验引发共鸣，热门讨论集中在职业尊严和城市生活压力。"],
-    ["长安的荔枝", "马伯庸", "古代项目管理像现代职场，读者爱聊不可能任务如何被拆解。"],
-    ["额尔古纳河右岸", "迟子建", "民族史诗和自然关系持续升温，讨论点是消失的生活方式。"],
-    ["活着", "余华", "经典重读热度稳定，大家讨论苦难、幽默和普通人的生命韧性。"],
-    ["盐镇", "易小荷", "小镇女性故事带来强烈现实感，讨论集中在女性处境和家庭责任。"]
+// 从 localStorage 读取已读状态
+function getReadStatus() {
+  try {
+    return JSON.parse(localStorage.getItem('novelReadStatus') || '{}');
+  } catch {
+    return {};
+  }
+}
+
+// 保存到 localStorage
+function setReadStatus(status) {
+  localStorage.setItem('novelReadStatus', JSON.stringify(status));
+}
+
+let readStatus = getReadStatus();
+
+const novels = [
+  {
+    title: "太白金星有点烦",
+    author: "马伯庸",
+    rating: "9.0",
+    summary: "太白金星李长庚最近有点烦。天庭和西天联合推出了「西天取经」的重大项目，他受命策划九九八十一难，确保唐僧能安全走完流程，平稳取经。老神仙本以为一切尽在掌控，谁知天大的麻烦才刚刚开始——费用报销、工作汇报、人事安排、各路大仙塞来的条子、各地妖怪暗藏的心思，捋不出的千头万缕，做不完的繁杂琐事……当大闹天宫的真相重新浮出水面，牵扯出无数因果，李长庚发觉自己成就金仙的道路越加渺茫。",
+    url: "https://book.douban.com/subject/36328762/",
+    read: !!readStatus["太白金星有点烦"]
+  },
+    {
+      title: "我在北京送快递",
+ {
+  title: "我在北京送快递",
+  author: "胡安焉",
+  rating: "8.2",
+  summary: "进入社会工作至今的二十年间，胡安焉走南闯北，辗转于广东、广西、云南、上海、北京等地，做过快递员、夜班拣货工人、便利店店员、保安、自行车店销售、服装店销售、加油站加油工……他将日常的点滴和工作的甘苦化作真诚的自述，记录了一个平凡人在工作中的辛劳、私心、温情与正气。",
+  url: "https://book.douban.com/subject/36274718/",
+  read: !!readStatus["我在北京送快递"]
+},
+    {
+      title: "长安的荔枝",
+   {
+  title: "长安的荔枝",
+  author: "马伯庸",
+  rating: "8.5",
+  summary: "大唐天宝十四年，长安城的小吏李善德突然接到一个任务：要在贵妃诞日之前，从岭南运来新鲜荔枝。荔枝「一日色变，两日香变，三日味变」，而岭南距长安五千余里，山水迢迢，这是个不可能完成的任务。可为了家人，李善德决心放手一搏。",
+  url: "https://book.douban.com/subject/36104107/",
+  read: !!readStatus["长安的荔枝"]
+},
+    {
+      title: "额尔古纳河右岸",
+ {
+  title: "额尔古纳河右岸",
+  author: "迟子建",
+  rating: "9.1",
+  summary: "这是第一部描述我国东北少数民族鄂温克人生存现状及百年沧桑的长篇小说。似一壁饱得天地之灵气，令人惊叹却难得其解的神奇岩画；又似一卷时而安恬、时而激越，向世人诉说人生挚爱与心灵悲苦的民族史诗。",
+  url: "https://book.douban.com/subject/1437752/",
+  read: !!readStatus["额尔古纳河右岸"]
+},
+    {
+      title: "活着",
+      {
+  title: "活着",
+  author: "余华",
+  rating: "9.4",
+  summary: "《活着》讲述了农村人福贵悲惨的人生遭遇。福贵本是个阔少爷，可他嗜赌如命，终于赌光了家业，一贫如洗。他的父亲被他活活气死，母亲则在穷困中患了重病。此后更加悲惨的命运一次又一次降临到福贵身上，他的妻子、儿女和孙子相继死去，最后只剩福贵和一头老牛相依为命，但他依旧活着，仿佛比往日更加洒脱与坚强。",
+  url: "https://book.douban.com/subject/4913064/",
+  read: !!readStatus["活着"]
+},
+    {
+      title: "盐镇",
+      {
+  title: "盐镇",
+  author: "易小荷",
+  rating: "8.6",
+  summary: "在四川南部的古老盐业小镇，女人们过着看似波澜不惊实则惊心动魄的生活。十六七岁就步入婚姻，怀孕、家暴、背叛……她们默默忍受着，直到耗尽一生。古镇的兴衰、婚姻的变故、代际的创伤，都汇聚在这些女性的命运之中。作者历时一年沉浸式调查，打捞出十二位女性在城乡之间、历史与现实中挣扎求存的故事。",
+  url: "https://book.douban.com/subject/36247024/",
+  read: !!readStatus["盐镇"]
+}]
   ];
 
-  document.getElementById("novel-list").innerHTML = novels.map(([title, author, topic], index) => `
-    <article class="list-item">
-      <span>Top ${index + 1}</span>
-      <strong>${title}</strong>
-      <span>${author}</span>
-      <p>${topic}</p>
+  // 过滤掉已读的
+const unreadNovels = novels.filter(n => !n.read);
+
+document.getElementById("novel-list").innerHTML = unreadNovels.map((novel, index) => `
+    <article class="list-item novel-card">
+      <div class="novel-header">
+        <span class="novel-rank">Top ${index + 1}</span>
+        <span class="novel-rating">⭐ ${novel.rating}</span>
+      </div>
+      <div class="novel-controls">
+        <label class="novel-checkbox-label">
+          <input type="checkbox" class="novel-read-checkbox" data-title="${escapeHtml(novel.title)}" ${novel.read ? 'checked' : ''}>
+          已阅读
+        </label>
+      </div>
+      <strong>${escapeHtml(novel.title)}</strong>
+      <span class="novel-author">${escapeHtml(novel.author)}</span>
+      <p class="novel-summary">${escapeHtml(novel.summary)}</p>
+      <a class="novel-link" href="${novel.url}" target="_blank" rel="noopener">📖 豆瓣详情页 →</a>
     </article>
   `).join("");
+
+// 绑定勾选事件
+requestAnimationFrame(() => {
+  document.querySelectorAll('.novel-read-checkbox').forEach(cb => {
+    cb.addEventListener('change', e => {
+      const title = e.target.dataset.title;
+      readStatus[title] = e.target.checked;
+      setReadStatus(readStatus);
+      // 重新渲染
+      renderNovels(false);
+    });
+  });
+});
 
   if (showMessage) { trackDaily("novel"); toast("榜单已刷新"); }
 }

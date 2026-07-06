@@ -508,6 +508,84 @@ textarea.field {
   line-height: 1.65;
 }
 
+/* 小说卡片 */
+.novel-card {
+  min-height: auto;
+  gap: 6px;
+}
+
+.novel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.novel-rank {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.novel-rating {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #e09015;
+  background: #fef6e6;
+  padding: 2px 10px;
+  border-radius: 999px;
+}
+
+.novel-author {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.novel-summary {
+  color: #303641;
+  font-size: 13px;
+  line-height: 1.7;
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.novel-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 4px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--work);
+  text-decoration: none;
+}
+
+.novel-link:hover {
+  text-decoration: underline;
+}
+
+/* 已阅读勾选 */
+.novel-controls {
+  margin: 4px 0;
+}
+
+.novel-checkbox-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.novel-checkbox-label input {
+  margin: 0;
+  accent-color: var(--work);
+}
+
 .schedule-list {
   display: grid;
   gap: 10px;
