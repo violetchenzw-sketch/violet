@@ -1,751 +1,1092 @@
-const STORAGE_KEY = "goal-assistant-state";
-
-const tabs = {
-  wechat: { mode: "work", title: "公众号爆款拆解", kicker: "工作 / 提升自己" },
-  douyin: { mode: "work", title: "抖音视频爆款分析", kicker: "工作 / 提升自己" },
-  xhs: { mode: "work", title: "小红书图文结构分析", kicker: "工作 / 提升自己" },
-  novel: { mode: "work", title: "豆瓣热门小说", kicker: "工作 / 提升自己" },
-  study: { mode: "work", title: "学习截图摘取", kicker: "工作 / 提升自己" },
-  dance: { mode: "fun", title: "跳舞每周排期", kicker: "娱乐 / 做个有趣的大人" },
-  music: { mode: "fun", title: "音乐双周排期", kicker: "娱乐 / 做个有趣的大人" },
-  reading: { mode: "fun", title: "每月阅读列表", kicker: "娱乐 / 做个有趣的大人" },
-  "daily-summary": { mode: "summary", title: "每日数据总结", kicker: "总结 / 每日回顾" }
-};
-
-const state = loadState();
-
-document.addEventListener("DOMContentLoaded", () => {
-  bindNavigation();
-  bindUploads();
-  bindForms();
-  renderEmptyResults();
-  renderNovels(false);
-  renderSchedules();
-  updateStats();
-  initDailyTracker();
-  switchTab("wechat");
-});
-
-function defaultState() {
-  return {
-    outputs: 0,
-    dance: [],
-    music: [],
-    reading: [],
-    dailyLogs: {} // { "YYYY-MM-DD": { wechat: n, douyin: n, xhs: n, study: n, novel: n, dance: n, music: n, reading: n } }
-  };
+:root {
+  --bg: #eef0f5;
+  --paper: #f7f5f1;
+  --panel: rgba(250, 249, 246, 0.94);
+  --panel-strong: #fbfaf7;
+  --panel-blue: #e8edf5;
+  --panel-purple: #ede9f2;
+  --ink: #293143;
+  --ink-soft: #465064;
+  --muted: #737b8b;
+  --line: #cfd3dc;
+  --line-strong: #9299a8;
+  --work: #596f9d;
+  --work-dark: #42577f;
+  --work-soft: #e4eaf4;
+  --fun: #776b92;
+  --fun-dark: #5f5478;
+  --fun-soft: #ebe6f1;
+  --rose: #a97986;
+  --sage: #82958a;
+  --green: #5f7f70;
+  --yellow: #9a7b4f;
+  --sidebar: #333b52;
+  --sidebar-soft: #404861;
+  --shadow: 0 18px 44px rgba(49, 56, 78, 0.08);
+  --shadow-hover: 0 22px 52px rgba(49, 56, 78, 0.13);
+  --radius: 14px;
+  --radius-small: 9px;
 }
 
-function loadState() {
-  try {
-    return { ...defaultState(), ...JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}") };
-  } catch {
-    return defaultState();
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  color: var(--ink);
+  background-color: var(--bg);
+  background-image:
+    linear-gradient(rgba(89, 111, 157, 0.055) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(119, 107, 146, 0.045) 1px, transparent 1px),
+    radial-gradient(circle at 78% 8%, rgba(119, 107, 146, 0.13), transparent 28%),
+    radial-gradient(circle at 24% 92%, rgba(89, 111, 157, 0.12), transparent 30%);
+  background-size: 28px 28px, 28px 28px, auto, auto;
+  font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+button,
+input,
+textarea {
+  font: inherit;
+}
+
+button,
+label {
+  -webkit-tap-highlight-color: transparent;
+}
+
+button {
+  cursor: pointer;
+}
+
+button:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+a:focus-visible {
+  outline: 3px solid rgba(89, 111, 157, 0.28);
+  outline-offset: 2px;
+}
+
+.app-shell {
+  display: flex;
+  min-height: 100vh;
+}
+
+.sidebar {
+  position: fixed;
+  inset: 0 auto 0 0;
+  z-index: 20;
+  width: 286px;
+  padding: 22px 16px;
+  overflow-y: auto;
+  color: #f4f3f7;
+  background:
+    linear-gradient(160deg, rgba(119, 107, 146, 0.34), transparent 42%),
+    linear-gradient(180deg, var(--sidebar), #2c3348 72%);
+  border-right: 1px solid rgba(255, 255, 255, 0.13);
+  box-shadow: 12px 0 34px rgba(31, 37, 54, 0.12);
+}
+
+.sidebar::after {
+  content: "BLUE HOUR / PERSONAL STUDIO";
+  display: block;
+  margin: 30px 12px 8px;
+  color: rgba(244, 243, 247, 0.35);
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  padding: 8px 10px 22px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.brand-mark {
+  display: grid;
+  width: 43px;
+  height: 43px;
+  flex: 0 0 43px;
+  place-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.34);
+  border-radius: 13px;
+  color: #2f3850;
+  background: linear-gradient(145deg, #dce5f2, #c8bdd6);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7), 0 8px 22px rgba(20, 25, 40, 0.18);
+  font-size: 17px;
+  font-weight: 900;
+}
+
+.brand strong,
+.brand small,
+.mode-button strong,
+.mode-button small {
+  display: block;
+}
+
+.brand strong {
+  letter-spacing: 0.03em;
+}
+
+.brand small,
+.mode-button small {
+  margin-top: 3px;
+  color: rgba(244, 243, 247, 0.58);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+}
+
+.mode-nav {
+  display: grid;
+  gap: 10px;
+  padding-top: 20px;
+}
+
+.nav-group {
+  overflow: hidden;
+  border: 1px solid transparent;
+  border-radius: 13px;
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+.nav-group.is-open {
+  border-color: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.045);
+}
+
+.mode-button,
+.child-button {
+  width: 100%;
+  border: 0;
+  text-align: left;
+  color: inherit;
+}
+
+.mode-button {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 64px;
+  padding: 11px 12px;
+  border-radius: 12px;
+  background: transparent;
+  transition: background 0.18s ease, transform 0.18s ease;
+}
+
+.mode-button:hover {
+  background: rgba(255, 255, 255, 0.07);
+  transform: translateX(2px);
+}
+
+.mode-button.is-active {
+  background: rgba(255, 255, 255, 0.1);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.04);
+}
+
+.mode-dot {
+  width: 7px;
+  height: 34px;
+  flex: 0 0 7px;
+  border-radius: 999px;
+  box-shadow: 0 0 18px currentColor;
+}
+
+.work-dot {
+  color: #9fb2d7;
+  background: #9fb2d7;
+}
+
+.fun-dot {
+  color: #b7a6c8;
+  background: #b7a6c8;
+}
+
+.child-nav {
+  display: none;
+  padding: 4px 10px 12px 39px;
+}
+
+.nav-group.is-open .child-nav {
+  display: grid;
+  gap: 4px;
+  animation: menu-reveal 0.18s ease-out;
+}
+
+@keyframes menu-reveal {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.child-button {
+  position: relative;
+  min-height: 36px;
+  padding: 7px 12px;
+  border-radius: 9px;
+  color: rgba(244, 243, 247, 0.67);
+  background: transparent;
+  transition: color 0.18s ease, background 0.18s ease, padding-left 0.18s ease;
+}
+
+.child-button::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 2px;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: currentColor;
+  transform: translateY(-50%);
+  opacity: 0.45;
+}
+
+.child-button:hover,
+.child-button.is-active {
+  padding-left: 16px;
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.child-button.is-active::before {
+  width: 6px;
+  height: 6px;
+  opacity: 1;
+}
+
+.main {
+  width: calc(100% - 286px);
+  max-width: 1540px;
+  min-height: 100vh;
+  margin-left: 286px;
+  padding: 34px clamp(22px, 4vw, 58px) 64px;
+}
+
+.topbar {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 20px;
+  padding: 2px 2px 19px;
+  border-bottom: 1px solid rgba(41, 49, 67, 0.18);
+}
+
+.topbar::after {
+  content: "";
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  width: 82px;
+  height: 3px;
+  background: linear-gradient(90deg, var(--work), var(--fun));
+}
+
+.topbar p,
+.topbar h1 {
+  margin: 0;
+}
+
+.topbar p {
+  color: var(--work-dark);
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+}
+
+.topbar h1 {
+  margin-top: 7px;
+  font-size: clamp(28px, 3vw, 42px);
+  line-height: 1.08;
+  letter-spacing: -0.035em;
+}
+
+.status-pill,
+.label,
+.state {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 28px;
+  padding: 4px 11px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 850;
+  letter-spacing: 0.04em;
+}
+
+.status-pill {
+  min-height: 38px;
+  border: 1px solid var(--line-strong);
+  color: var(--ink-soft);
+  background: rgba(250, 249, 246, 0.78);
+  box-shadow: 3px 3px 0 rgba(89, 111, 157, 0.13);
+  white-space: nowrap;
+}
+
+.status-pill::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  margin-right: 7px;
+  border-radius: 50%;
+  background: var(--sage);
+  box-shadow: 0 0 0 4px rgba(130, 149, 138, 0.13);
+}
+
+.dashboard-strip {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 13px;
+  margin-bottom: 22px;
+}
+
+.dashboard-strip article {
+  position: relative;
+  min-height: 118px;
+  overflow: hidden;
+  padding: 17px 19px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius);
+  background: var(--panel);
+  box-shadow: 4px 4px 0 rgba(89, 111, 157, 0.09);
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.dashboard-strip article:nth-child(2) {
+  background: linear-gradient(145deg, var(--panel), var(--panel-purple));
+}
+
+.dashboard-strip article:nth-child(3) {
+  background: linear-gradient(145deg, var(--panel), #e9efeb);
+}
+
+.dashboard-strip article::after {
+  content: "";
+  position: absolute;
+  top: -28px;
+  right: -22px;
+  width: 88px;
+  height: 88px;
+  border: 1px solid rgba(89, 111, 157, 0.22);
+  border-radius: 50%;
+}
+
+.dashboard-strip article:hover {
+  transform: translateY(-2px);
+  box-shadow: 6px 7px 0 rgba(89, 111, 157, 0.1);
+}
+
+.dashboard-strip span,
+.dashboard-strip small {
+  position: relative;
+  z-index: 1;
+  display: block;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.dashboard-strip span {
+  font-weight: 800;
+  letter-spacing: 0.06em;
+}
+
+.dashboard-strip strong {
+  position: relative;
+  z-index: 1;
+  display: block;
+  margin: 9px 0 4px;
+  color: var(--ink);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 34px;
+  line-height: 0.9;
+}
+
+.panel {
+  display: none;
+}
+
+.panel.is-active {
+  display: block;
+  animation: panel-in 0.25s ease-out;
+}
+
+@keyframes panel-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.workbench {
+  display: grid;
+  gap: 18px;
+}
+
+.two-column {
+  grid-template-columns: minmax(310px, 0.82fr) minmax(0, 1.45fr);
+  align-items: stretch;
+}
+
+.task-card,
+.result-card,
+.schedule-card {
+  position: relative;
+  overflow: hidden;
+  padding: 22px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius);
+  background: var(--panel);
+  box-shadow: var(--shadow);
+}
+
+.task-card::before,
+.result-card::before,
+.schedule-card::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 4px;
+  background: linear-gradient(90deg, var(--work), var(--fun), var(--rose));
+  opacity: 0.72;
+}
+
+.task-card {
+  background: linear-gradient(160deg, rgba(250, 249, 246, 0.98), rgba(232, 237, 245, 0.86));
+}
+
+.result-card,
+.schedule-card {
+  background: linear-gradient(160deg, rgba(250, 249, 246, 0.98), rgba(237, 233, 242, 0.7));
+}
+
+.task-card.compact {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 18px;
+  box-shadow: 4px 4px 0 rgba(89, 111, 157, 0.09);
+}
+
+.card-head {
+  margin-bottom: 19px;
+}
+
+.card-head h2 {
+  margin: 9px 0 6px;
+  font-size: 20px;
+  line-height: 1.28;
+  letter-spacing: -0.02em;
+}
+
+.card-head p {
+  max-width: 58ch;
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+.label {
+  border: 1px solid rgba(89, 111, 157, 0.22);
+  color: var(--work-dark);
+  background: var(--work-soft);
+  text-transform: uppercase;
+}
+
+.label.fun {
+  border-color: rgba(119, 107, 146, 0.23);
+  color: var(--fun-dark);
+  background: var(--fun-soft);
+}
+
+.upload-box {
+  display: grid;
+  gap: 5px;
+  min-height: 122px;
+  place-items: center;
+  padding: 20px;
+  margin-bottom: 13px;
+  border: 1px dashed var(--line-strong);
+  border-radius: 12px;
+  color: var(--work-dark);
+  background:
+    linear-gradient(rgba(89, 111, 157, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(89, 111, 157, 0.04) 1px, transparent 1px),
+    rgba(250, 249, 246, 0.72);
+  background-size: 18px 18px;
+  transition: border-color 0.18s ease, background-color 0.18s ease, transform 0.18s ease;
+}
+
+.upload-box:hover {
+  border-color: var(--work);
+  background-color: var(--work-soft);
+  transform: translateY(-1px);
+}
+
+.fun-upload {
+  color: var(--fun-dark);
+}
+
+.fun-upload:hover {
+  border-color: var(--fun);
+  background-color: var(--fun-soft);
+}
+
+.upload-box input {
+  display: none;
+}
+
+.upload-box span {
+  font-weight: 850;
+}
+
+.upload-box small {
+  max-width: 100%;
+  overflow: hidden;
+  color: var(--muted);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.field {
+  display: block;
+  width: 100%;
+  min-height: 46px;
+  margin-bottom: 12px;
+  padding: 11px 13px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  outline: none;
+  color: var(--ink);
+  background: rgba(251, 250, 247, 0.9);
+  transition: border-color 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+}
+
+.field::placeholder {
+  color: #969baa;
+}
+
+textarea.field {
+  min-height: 116px;
+  resize: vertical;
+}
+
+.field:focus {
+  border-color: var(--work);
+  background: #ffffff;
+  box-shadow: 0 0 0 4px rgba(89, 111, 157, 0.12);
+}
+
+.primary-button,
+.fun-button,
+.secondary-button,
+.plain-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 10px 17px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  font-weight: 850;
+  transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+}
+
+.primary-button,
+.fun-button {
+  width: 100%;
+  color: #ffffff;
+  box-shadow: 3px 4px 0 rgba(41, 49, 67, 0.18);
+}
+
+.primary-button {
+  background: linear-gradient(135deg, var(--work), var(--work-dark));
+}
+
+.fun-button {
+  background: linear-gradient(135deg, var(--fun), var(--fun-dark));
+}
+
+.primary-button:hover,
+.fun-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 4px 6px 0 rgba(41, 49, 67, 0.16);
+}
+
+.primary-button:active,
+.fun-button:active {
+  transform: translateY(0);
+  box-shadow: 2px 2px 0 rgba(41, 49, 67, 0.18);
+}
+
+.secondary-button,
+.plain-button {
+  width: 100%;
+  margin-top: 10px;
+  border-color: var(--line-strong);
+  color: var(--ink);
+  background: rgba(250, 249, 246, 0.9);
+}
+
+.secondary-button:hover,
+.plain-button:hover {
+  background: var(--panel-blue);
+  transform: translateY(-1px);
+}
+
+.fit {
+  width: auto;
+  white-space: nowrap;
+}
+
+.result-card {
+  min-height: 430px;
+}
+
+.empty-result {
+  display: grid;
+  min-height: 365px;
+  padding: 24px;
+  place-items: center;
+  border: 1px dashed var(--line-strong);
+  border-radius: 12px;
+  color: var(--muted);
+  background: rgba(250, 249, 246, 0.48);
+  text-align: center;
+}
+
+.result-section {
+  padding: 17px 0;
+  border-top: 1px solid var(--line);
+}
+
+.result-section:first-child {
+  padding-top: 0;
+  border-top: 0;
+}
+
+.result-section h3 {
+  margin: 0 0 10px;
+  font-size: 16px;
+}
+
+.result-section p,
+.result-section li {
+  color: var(--ink-soft);
+  line-height: 1.78;
+}
+
+.result-section ol,
+.result-section ul {
+  margin: 0;
+  padding-left: 20px;
+}
+
+.result-section p {
+  margin: 0 0 8px;
+}
+
+.copy-row {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 16px;
+}
+
+.copy-row .plain-button {
+  width: auto;
+  margin-top: 0;
+}
+
+.list-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(255px, 1fr));
+  gap: 14px;
+}
+
+.list-item {
+  position: relative;
+  display: grid;
+  gap: 8px;
+  min-height: 154px;
+  padding: 17px;
+  overflow: hidden;
+  border: 1px solid var(--line-strong);
+  border-radius: 13px;
+  background: var(--panel);
+  box-shadow: 3px 4px 0 rgba(89, 111, 157, 0.08);
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.list-item:nth-child(3n + 2) {
+  background: linear-gradient(145deg, var(--panel), var(--panel-blue));
+}
+
+.list-item:nth-child(3n) {
+  background: linear-gradient(145deg, var(--panel), var(--panel-purple));
+}
+
+.list-item:hover {
+  transform: translateY(-3px);
+  box-shadow: 5px 7px 0 rgba(89, 111, 157, 0.09);
+}
+
+.list-item strong {
+  font-size: 17px;
+}
+
+.list-item span,
+.list-item p,
+.schedule-item span,
+.schedule-item small {
+  color: var(--muted);
+}
+
+.list-item p {
+  margin: 0;
+  line-height: 1.66;
+}
+
+.novel-card {
+  min-height: auto;
+  gap: 7px;
+}
+
+.novel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.novel-rank {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+}
+
+.novel-rating {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 3px 10px;
+  border: 1px solid rgba(154, 123, 79, 0.2);
+  border-radius: 999px;
+  color: #80633e !important;
+  background: #eee6d8;
+  font-size: 12px;
+  font-weight: 750;
+}
+
+.novel-author {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.novel-summary {
+  display: -webkit-box;
+  overflow: hidden;
+  color: var(--ink-soft) !important;
+  font-size: 13px;
+  line-height: 1.72 !important;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 4;
+}
+
+.novel-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 4px;
+  color: var(--work-dark);
+  font-size: 13px;
+  font-weight: 750;
+  text-decoration: none;
+}
+
+.novel-link:hover {
+  text-decoration: underline;
+}
+
+.novel-controls {
+  margin: 4px 0;
+}
+
+.novel-checkbox-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--muted);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.novel-checkbox-label input {
+  margin: 0;
+  accent-color: var(--work);
+}
+
+.schedule-list {
+  display: grid;
+  gap: 10px;
+}
+
+.schedule-item {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 12px;
+  align-items: center;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  background: rgba(250, 249, 246, 0.82);
+  transition: border-color 0.18s ease, transform 0.18s ease;
+}
+
+.schedule-item:hover {
+  border-color: var(--line-strong);
+  transform: translateX(2px);
+}
+
+.schedule-item strong,
+.schedule-item small {
+  display: block;
+}
+
+.schedule-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.icon-button {
+  min-width: 36px;
+  min-height: 36px;
+  border: 1px solid var(--line-strong);
+  border-radius: 9px;
+  color: var(--ink);
+  background: var(--panel-strong);
+  font-weight: 850;
+}
+
+.icon-button:hover {
+  background: var(--panel-blue);
+}
+
+.state {
+  color: var(--yellow);
+  background: #ece4d7;
+}
+
+.state.done {
+  color: var(--green);
+  background: #e0e9e4;
+}
+
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: 24px;
+  z-index: 50;
+  max-width: min(420px, calc(100vw - 32px));
+  padding: 11px 15px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 10px;
+  color: #ffffff;
+  background: #30374d;
+  box-shadow: 0 16px 44px rgba(32, 38, 56, 0.26);
+  font-size: 14px;
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(-50%, 20px);
+  transition: opacity 0.18s ease, transform 0.18s ease;
+}
+
+.toast.is-visible {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+@media (max-width: 1080px) {
+  .two-column {
+    grid-template-columns: minmax(290px, 0.9fr) minmax(0, 1.1fr);
   }
 }
 
-function saveState() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-}
-
-function bindNavigation() {
-  document.querySelectorAll("[data-mode-button]").forEach((button) => {
-    button.addEventListener("click", () => {
-      const mode = button.dataset.modeButton;
-      const firstTab = mode === "work" ? "wechat" : mode === "fun" ? "dance" : "daily-summary";
-      switchTab(firstTab);
-    });
-  });
-
-  document.querySelectorAll("[data-tab]").forEach((button) => {
-    button.addEventListener("click", () => switchTab(button.dataset.tab));
-  });
-}
-
-function switchTab(tabName) {
-  const tab = tabs[tabName];
-  if (!tab) return;
-
-  document.querySelectorAll(".panel").forEach((panel) => {
-    panel.classList.toggle("is-active", panel.id === `panel-${tabName}`);
-  });
-
-  document.querySelectorAll("[data-tab]").forEach((button) => {
-    button.classList.toggle("is-active", button.dataset.tab === tabName);
-  });
-
-  document.querySelectorAll(".nav-group").forEach((group) => {
-    group.classList.toggle("is-open", group.dataset.mode === tab.mode);
-  });
-
-  document.querySelectorAll("[data-mode-button]").forEach((button) => {
-    button.classList.toggle("is-active", button.dataset.modeButton === tab.mode);
-  });
-
-  document.getElementById("page-title").textContent = tab.title;
-  document.getElementById("mode-kicker").textContent = tab.kicker;
-  const modeLabels = { work: "工作模式", fun: "娱乐模式", summary: "总结模式" };
-  document.getElementById("status-pill").textContent = modeLabels[tab.mode] || "总结模式";
-
-  if (tabName === "daily-summary") renderDailySummary();
-}
-
-function bindUploads() {
-  document.querySelectorAll("[data-file]").forEach((input) => {
-    input.addEventListener("change", () => {
-      const key = input.dataset.file;
-      const target = document.querySelector(`[data-file-name="${key}"]`);
-      if (!target) return;
-
-      if (!input.files.length) {
-        target.textContent = "未选择文件";
-        return;
-      }
-
-      const names = Array.from(input.files).map((file) => file.name);
-      target.textContent = names.length > 1 ? `${names.length} 个文件：${names.join("、")}` : names[0];
-    });
-  });
-}
-
-function bindForms() {
-  document.querySelector('[data-form="wechat"]').addEventListener("submit", handleWechat);
-  document.querySelector('[data-form="douyin"]').addEventListener("submit", handleDouyin);
-  document.querySelector('[data-form="xhs"]').addEventListener("submit", handleXhs);
-  document.querySelector('[data-form="study"]').addEventListener("submit", handleStudy);
-  document.querySelector('[data-form="dance"]').addEventListener("submit", handleDance);
-  document.querySelector('[data-form="music"]').addEventListener("submit", handleMusic);
-  document.querySelector('[data-form="reading"]').addEventListener("submit", handleReading);
-  document.getElementById("refresh-novels").addEventListener("click", renderNovels);
-  document.getElementById("auto-books").addEventListener("click", addRecommendedBooks);
-}
-
-function renderEmptyResults() {
-  ["wechat", "douyin", "xhs", "study"].forEach((key) => {
-    const el = document.getElementById(`${key}-result`);
-    el.innerHTML = `
-      <div class="empty-result">
-        <div>
-          <strong>等待输入</strong>
-          <p>提交后会在这里输出可直接行动的结论。</p>
-        </div>
-      </div>
-    `;
-  });
-}
-
-function handleWechat(event) {
-  event.preventDefault();
-  const form = event.currentTarget;
-  const keyword = form.keyword.value.trim() || "这篇公众号文章";
-  const notes = form.notes.value.trim();
-
-  trackDaily("wechat");
-
-  setResult("wechat", `
-    ${section("爆款点", `
-      <ol>
-        <li>标题有明确收益或冲突，读者能立刻判断点开后的回报。</li>
-        <li>开头先给结论或反常识判断，减少铺垫，把注意力留住。</li>
-        <li>正文用案例、清单、金句交替推进，适合转发和收藏。</li>
-      </ol>
-    `)}
-    ${section("可模仿选题", `
-      <ol>
-        <li>《${escapeHtml(keyword)}背后的 3 个普通人机会》：现象切入，拆机会，给行动清单。</li>
-        <li>《我复盘了${escapeHtml(keyword)}，发现真正有效的是这一步》：复盘切入，提出核心变量。</li>
-        <li>《别再只看热闹了，${escapeHtml(keyword)}可以这样迁移到你的工作里》：迁移切入，强调可复制。</li>
-      </ol>
-    `)}
-    ${section("文章结构", `
-      <p>强钩子标题 -> 30 秒讲清收益 -> 2 到 3 个案例 -> 方法论拆成 3 步 -> 给模板 -> 评论区问题收尾。</p>
-      ${notes ? `<p>你补充的观察：${escapeHtml(notes)}</p>` : ""}
-    `)}
-  `);
-}
-
-function handleDouyin(event) {
-  event.preventDefault();
-  const form = event.currentTarget;
-  const url = form.url.value.trim();
-  const notes = form.notes.value.trim();
-
-  if (!url) {
-    toast("请先粘贴抖音分享链接");
-    return;
+@media (max-width: 900px) {
+  .app-shell {
+    display: block;
   }
 
-  trackDaily("douyin");
+  .sidebar {
+    position: sticky;
+    top: 0;
+    z-index: 30;
+    width: 100%;
+    min-height: auto;
+    padding: 12px 14px;
+    overflow: visible;
+    box-shadow: 0 10px 30px rgba(31, 37, 54, 0.14);
+  }
 
-  setResult("douyin", `
-    ${section("内容识别", `
-      <p>链接已记录：${escapeHtml(url)}</p>
-      <p>当前静态版不会真实下载视频，已按短视频拆解框架生成分析。</p>
-    `)}
-    ${section("爆款点", `
-      <ol>
-        <li>前 3 秒需要出现结果、冲突或异常画面，让用户知道为什么不能划走。</li>
-        <li>每 5 到 7 秒切换一个信息点，避免单一镜头拖慢完播率。</li>
-        <li>评论区问题要能引发站队、补充经验或求教程。</li>
-      </ol>
-    `)}
-    ${section("复刻动作", `
-      <ul>
-        <li>脚本：一句结果开场，三段递进解释，最后一句明确引导互动。</li>
-        <li>画面：封面只保留一个大标题和一个主体，不堆素材。</li>
-        <li>发布后：把高赞评论整理成下一条选题。</li>
-      </ul>
-      ${notes ? `<p>你补充的线索：${escapeHtml(notes)}</p>` : ""}
-    `)}
-  `);
-}
+  .sidebar::after,
+  .brand small,
+  .mode-button small,
+  .mode-dot {
+    display: none;
+  }
 
-function handleXhs(event) {
-  event.preventDefault();
-  const form = event.currentTarget;
-  const notes = form.notes.value.trim();
+  .brand {
+    padding: 2px 4px 10px;
+    border-bottom: 0;
+  }
 
-  trackDaily("xhs");
+  .brand-mark {
+    width: 34px;
+    height: 34px;
+    flex-basis: 34px;
+    border-radius: 10px;
+  }
 
-  setResult("xhs", `
-    ${section("排版结构", `
-      <ol>
-        <li>封面：标题占画面 25% 到 35%，视觉主体居中，背景少干扰。</li>
-        <li>正文：一页一个结论，用短句、数字和分隔线降低阅读成本。</li>
-        <li>末页：给清单、模板或避坑总结，强化收藏理由。</li>
-      </ol>
-    `)}
-    ${section("爆款点", `
-      <ol>
-        <li>人群标签明确，例如新手、打工人、独居女生、低预算。</li>
-        <li>标题同时包含痛点和结果，减少抽象形容词。</li>
-        <li>图片信息密度高但层级清楚，读者扫一眼能抓到重点。</li>
-      </ol>
-      ${notes ? `<p>你补充的数据：${escapeHtml(notes)}</p>` : ""}
-    `)}
-  `);
-}
+  .mode-nav {
+    display: flex;
+    gap: 7px;
+    padding-top: 0;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
 
-function handleStudy(event) {
-  event.preventDefault();
-  const form = event.currentTarget;
-  const topic = form.topic.value.trim() || "这份资料";
-  const notes = form.notes.value.trim();
+  .mode-nav::-webkit-scrollbar {
+    display: none;
+  }
 
-  trackDaily("study");
+  .nav-group,
+  .nav-group.is-open {
+    display: contents;
+    border: 0;
+    background: transparent;
+  }
 
-  setResult("study", `
-    ${section("关键信息", `
-      <p>主题：${escapeHtml(topic)}</p>
-      <ul>
-        <li>核心概念：先定义对象，再说明它解决什么问题。</li>
-        <li>重要关系：找出因果、对比、步骤和条件。</li>
-        <li>可执行动作：把资料转成下一次能复用的清单。</li>
-      </ul>
-    `)}
-    ${section("整理文本", `
-      <p>${notes ? escapeHtml(notes) : "当前静态版无法直接 OCR。你可以把截图文字粘贴到输入框，页面会按复习笔记结构整理；接入 OCR 接口后可自动识别图片文字。"}</p>
-    `)}
-    ${section("复习卡片", `
-      <ol>
-        <li>一句话总结：${escapeHtml(topic)}最重要的是把信息转成行动。</li>
-        <li>下次复习：先看核心概念，再看例子，最后做一遍输出。</li>
-      </ol>
-    `)}
-  `);
-}
+  .mode-button {
+    min-width: max-content;
+    min-height: 38px;
+    padding: 7px 12px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+  }
 
-function setResult(key, html) {
-  const el = document.getElementById(`${key}-result`);
-  el.innerHTML = `
-    ${html}
-    <div class="copy-row">
-      <button class="plain-button" type="button" data-copy="${key}">复制结果</button>
-    </div>
-  `;
+  .child-nav,
+  .nav-group.is-open .child-nav {
+    display: flex;
+    gap: 5px;
+    padding: 0;
+  }
 
-  el.querySelector("[data-copy]").addEventListener("click", () => {
-    copyText(el.innerText);
-  });
+  .child-button {
+    width: auto;
+    min-width: max-content;
+    min-height: 38px;
+    padding: 7px 11px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
 
-  state.outputs += 1;
-  saveState();
-  updateStats();
-  toast("分析结果已生成");
-}
+  .child-button::before {
+    display: none;
+  }
 
-function section(title, content) {
-  return `<section class="result-section"><h3>${title}</h3>${content}</section>`;
-}
+  .child-button:hover,
+  .child-button.is-active {
+    padding-left: 11px;
+  }
 
-function renderNovels(showMessage = true) {
-// 从 localStorage 读取已读状态
-function getReadStatus() {
-  try {
-    return JSON.parse(localStorage.getItem('novelReadStatus') || '{}');
-  } catch {
-    return {};
+  .main {
+    width: 100%;
+    margin-left: 0;
+    padding: 26px 18px 52px;
+  }
+
+  .two-column,
+  .dashboard-strip {
+    grid-template-columns: 1fr;
+  }
+
+  .result-card {
+    min-height: 320px;
+  }
+
+  .task-card.compact,
+  .topbar {
+    display: grid;
+  }
+
+  .status-pill {
+    width: max-content;
   }
 }
 
-// 保存到 localStorage
-function setReadStatus(status) {
-  localStorage.setItem('novelReadStatus', JSON.stringify(status));
-}
-
-let readStatus = getReadStatus();
-
-const novels = [
-  {
-    title: "太白金星有点烦",
-    author: "马伯庸",
-    rating: "9.0",
-    summary: "太白金星李长庚最近有点烦。天庭和西天联合推出了「西天取经」的重大项目，他受命策划九九八十一难，确保唐僧能安全走完流程，平稳取经。老神仙本以为一切尽在掌控，谁知天大的麻烦才刚刚开始——费用报销、工作汇报、人事安排、各路大仙塞来的条子、各地妖怪暗藏的心思，捋不出的千头万缕，做不完的繁杂琐事……当大闹天宫的真相重新浮出水面，牵扯出无数因果，李长庚发觉自己成就金仙的道路越加渺茫。",
-    url: "https://book.douban.com/subject/36328762/",
-    read: !!readStatus["太白金星有点烦"]
-  },
- {
-  title: "我在北京送快递",
-  author: "胡安焉",
-  rating: "8.2",
-  summary: "进入社会工作至今的二十年间，胡安焉走南闯北，辗转于广东、广西、云南、上海、北京等地，做过快递员、夜班拣货工人、便利店店员、保安、自行车店销售、服装店销售、加油站加油工……他将日常的点滴和工作的甘苦化作真诚的自述，记录了一个平凡人在工作中的辛劳、私心、温情与正气。",
-  url: "https://book.douban.com/subject/36274718/",
-  read: !!readStatus["我在北京送快递"]
-},
-   {
-  title: "长安的荔枝",
-  author: "马伯庸",
-  rating: "8.5",
-  summary: "大唐天宝十四年，长安城的小吏李善德突然接到一个任务：要在贵妃诞日之前，从岭南运来新鲜荔枝。荔枝「一日色变，两日香变，三日味变」，而岭南距长安五千余里，山水迢迢，这是个不可能完成的任务。可为了家人，李善德决心放手一搏。",
-  url: "https://book.douban.com/subject/36104107/",
-  read: !!readStatus["长安的荔枝"]
-},
- {
-  title: "额尔古纳河右岸",
-  author: "迟子建",
-  rating: "9.1",
-  summary: "这是第一部描述我国东北少数民族鄂温克人生存现状及百年沧桑的长篇小说。似一壁饱得天地之灵气，令人惊叹却难得其解的神奇岩画；又似一卷时而安恬、时而激越，向世人诉说人生挚爱与心灵悲苦的民族史诗。",
-  url: "https://book.douban.com/subject/1437752/",
-  read: !!readStatus["额尔古纳河右岸"]
-},
-      {
-  title: "活着",
-  author: "余华",
-  rating: "9.4",
-  summary: "《活着》讲述了农村人福贵悲惨的人生遭遇。福贵本是个阔少爷，可他嗜赌如命，终于赌光了家业，一贫如洗。他的父亲被他活活气死，母亲则在穷困中患了重病。此后更加悲惨的命运一次又一次降临到福贵身上，他的妻子、儿女和孙子相继死去，最后只剩福贵和一头老牛相依为命，但他依旧活着，仿佛比往日更加洒脱与坚强。",
-  url: "https://book.douban.com/subject/4913064/",
-  read: !!readStatus["活着"]
-},
-{ 
-  title: "盐镇",
-  author: "易小荷",
-  rating: "8.6",
-  summary: "在四川南部的古老盐业小镇，女人们过着看似波澜不惊实则惊心动魄的生活。十六七岁就步入婚姻，怀孕、家暴、背叛……她们默默忍受着，直到耗尽一生。古镇的兴衰、婚姻的变故、代际的创伤，都汇聚在这些女性的命运之中。作者历时一年沉浸式调查，打捞出十二位女性在城乡之间、历史与现实中挣扎求存的故事。",
-  url: "https://book.douban.com/subject/36247024/",
-  read: !!readStatus["盐镇"]
-}
-  ];
-
-  // 过滤掉已读的
-const unreadNovels = novels.filter(n => !n.read);
-
-document.getElementById("novel-list").innerHTML = unreadNovels.map((novel, index) => `
-    <article class="list-item novel-card">
-      <div class="novel-header">
-        <span class="novel-rank">Top ${index + 1}</span>
-        <span class="novel-rating">⭐ ${novel.rating}</span>
-      </div>
-      <div class="novel-controls">
-        <label class="novel-checkbox-label">
-          <input type="checkbox" class="novel-read-checkbox" data-title="${escapeHtml(novel.title)}" ${novel.read ? 'checked' : ''}>
-          已阅读
-        </label>
-      </div>
-      <strong>${escapeHtml(novel.title)}</strong>
-      <span class="novel-author">${escapeHtml(novel.author)}</span>
-      <p class="novel-summary">${escapeHtml(novel.summary)}</p>
-      <a class="novel-link" href="${novel.url}" target="_blank" rel="noopener">📖 豆瓣详情页 →</a>
-    </article>
-  `).join("");
-
-// 绑定勾选事件
-requestAnimationFrame(() => {
-  document.querySelectorAll('.novel-read-checkbox').forEach(cb => {
-    cb.addEventListener('change', e => {
-      const title = e.target.dataset.title;
-      readStatus[title] = e.target.checked;
-      setReadStatus(readStatus);
-      // 重新渲染
-      renderNovels(false);
-    });
-  });
-});
-
-  if (showMessage) { trackDaily("novel"); toast("榜单已刷新"); }
-}
-
-function handleDance(event) {
-  event.preventDefault();
-  const form = event.currentTarget;
-  const title = form.title.value.trim() || getUploadedName("dance") || "新舞蹈";
-  const week = nextWeekLabel(state.dance.length, 1);
-
-  state.dance.push({
-    id: Date.now(),
-    title,
-    period: week,
-    status: "pending"
-  });
-
-  trackDaily("dance");
-  form.reset();
-  resetFileName("dance", "MP4 / MOV");
-  persistAndRender("已加入跳舞周计划");
-}
-
-function handleMusic(event) {
-  event.preventDefault();
-  const form = event.currentTarget;
-  const title = form.title.value.trim() || getUploadedName("music") || "新歌曲";
-  const period = nextWeekLabel(state.music.length, 2);
-
-  state.music.push({
-    id: Date.now(),
-    title,
-    period,
-    status: "pending"
-  });
-
-  trackDaily("music");
-  form.reset();
-  resetFileName("music", "图片 / PDF");
-  persistAndRender("已加入音乐双周计划");
-}
-
-function handleReading(event) {
-  event.preventDefault();
-  const form = event.currentTarget;
-  const title = form.title.value.trim();
-  const author = form.author.value.trim() || "作者待补";
-
-  if (!title) {
-    toast("请输入书名");
-    return;
+@media (max-width: 560px) {
+  body {
+    background-size: 22px 22px, 22px 22px, auto, auto;
   }
 
-  addBook(title, author, "手动添加");
-  trackDaily("reading");
-  form.reset();
-  persistAndRender("已加入本月阅读列表");
-}
-
-function addRecommendedBooks() {
-  const recommendations = [
-    ["我在北京送快递", "胡安焉", "热门新书"],
-    ["明亮的夜晚", "崔恩荣", "网友推荐"],
-    ["杀死一只知更鸟", "哈珀·李", "经典好书"],
-    ["置身事内", "兰小欢", "高分好书"]
-  ];
-
-  recommendations.forEach(([title, author, source]) => addBook(title, author, source));
-  trackDaily("reading");
-  persistAndRender("推荐组合已加入");
-}
-
-function addBook(title, author, source) {
-  const exists = state.reading.some((book) => book.title === title);
-  if (exists) return;
-
-  state.reading.push({
-    id: Date.now() + Math.random(),
-    title,
-    author,
-    source,
-    month: new Date().getMonth() + 1,
-    status: "pending"
-  });
-}
-
-function renderSchedules() {
-  renderSchedule("dance", state.dance);
-  renderSchedule("music", state.music);
-  renderSchedule("reading", currentMonthBooks());
-}
-
-function renderSchedule(key, items) {
-  const target = document.getElementById(`${key}-list`);
-  if (!target) return;
-
-  if (!items.length) {
-    target.innerHTML = `<div class="empty-result"><div><strong>暂无计划</strong><p>添加后会自动显示在这里。</p></div></div>`;
-    return;
+  .main {
+    padding: 22px 13px 44px;
   }
 
-  target.innerHTML = items.map((item) => `
-    <article class="schedule-item">
-      <div>
-        <strong>${escapeHtml(item.title)}</strong>
-        <small>${escapeHtml(item.period || item.source || "")}${item.author ? ` / ${escapeHtml(item.author)}` : ""}</small>
-      </div>
-      <div class="schedule-actions">
-        <span class="state ${item.status === "done" ? "done" : ""}">${item.status === "done" ? "完成" : "进行中"}</span>
-        <button class="icon-button" type="button" title="切换状态" data-toggle="${key}" data-id="${item.id}">✓</button>
-        <button class="icon-button" type="button" title="删除" data-delete="${key}" data-id="${item.id}">×</button>
-      </div>
-    </article>
-  `).join("");
-
-  target.querySelectorAll("[data-toggle]").forEach((button) => {
-    button.addEventListener("click", () => toggleItem(button.dataset.toggle, button.dataset.id));
-  });
-
-  target.querySelectorAll("[data-delete]").forEach((button) => {
-    button.addEventListener("click", () => deleteItem(button.dataset.delete, button.dataset.id));
-  });
-}
-
-function toggleItem(key, id) {
-  const list = key === "reading" ? state.reading : state[key];
-  const item = list.find((entry) => String(entry.id) === String(id));
-  if (!item) return;
-
-  item.status = item.status === "done" ? "pending" : "done";
-  persistAndRender(item.status === "done" ? "已标记完成" : "已恢复为进行中");
-}
-
-function deleteItem(key, id) {
-  state[key] = state[key].filter((entry) => String(entry.id) !== String(id));
-  persistAndRender("已删除");
-}
-
-function persistAndRender(message) {
-  saveState();
-  renderSchedules();
-  updateStats();
-  toast(message);
-}
-
-function updateStats() {
-  document.getElementById("work-output-count").textContent = state.outputs;
-
-  const activePlans = [...state.dance, ...state.music, ...currentMonthBooks()]
-    .filter((item) => item.status !== "done").length;
-  document.getElementById("plan-count").textContent = activePlans;
-
-  const doneBooks = currentMonthBooks().filter((book) => book.status === "done").length;
-  document.getElementById("reading-progress").textContent = `${doneBooks}/4`;
-}
-
-function currentMonthBooks() {
-  const month = new Date().getMonth() + 1;
-  return state.reading.filter((book) => book.month === month);
-}
-
-function nextWeekLabel(index, span) {
-  const start = index * span + 1;
-  if (span === 1) return `第 ${start} 周`;
-  return `第 ${start}-${start + span - 1} 周`;
-}
-
-function getUploadedName(key) {
-  const input = document.querySelector(`[data-file="${key}"]`);
-  return input?.files?.[0]?.name.replace(/\.[^.]+$/, "");
-}
-
-function resetFileName(key, text) {
-  const target = document.querySelector(`[data-file-name="${key}"]`);
-  if (target) target.textContent = text;
-}
-
-function toast(message) {
-  const el = document.getElementById("toast");
-  el.textContent = message;
-  el.classList.add("is-visible");
-  clearTimeout(el.timer);
-  el.timer = setTimeout(() => el.classList.remove("is-visible"), 1800);
-}
-
-function copyText(text) {
-  if (navigator.clipboard?.writeText) {
-    navigator.clipboard.writeText(text).then(() => toast("结果已复制")).catch(() => fallbackCopy(text));
-    return;
+  .topbar {
+    gap: 14px;
   }
 
-  fallbackCopy(text);
-}
-
-function fallbackCopy(text) {
-  const area = document.createElement("textarea");
-  area.value = text;
-  area.setAttribute("readonly", "");
-  area.style.position = "fixed";
-  area.style.opacity = "0";
-  document.body.appendChild(area);
-  area.select();
-  document.execCommand("copy");
-  document.body.removeChild(area);
-  toast("结果已复制");
-}
-
-function escapeHtml(value) {
-  return String(value)
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#039;");
-}
-
-// ===================== 每日总结 =====================
-
-function todayKey() {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-}
-
-function ensureTodayLog() {
-  const key = todayKey();
-  if (!state.dailyLogs[key]) {
-    state.dailyLogs[key] = { wechat: 0, douyin: 0, xhs: 0, study: 0, novel: 0, dance: 0, music: 0, reading: 0 };
+  .topbar h1 {
+    font-size: 29px;
   }
-  return state.dailyLogs[key];
-}
 
-function trackDaily(category) {
-  const log = ensureTodayLog();
-  if (log[category] !== undefined) {
-    log[category] += 1;
+  .dashboard-strip article {
+    min-height: 104px;
   }
-  saveState();
-}
 
-function initDailyTracker() {
-  // 绑定总结面板按钮
-  const refreshBtn = document.getElementById("refresh-summary");
-  const copyBtn = document.getElementById("copy-summary");
-  if (refreshBtn) refreshBtn.addEventListener("click", () => { renderDailySummary(); toast("数据已汇总"); });
-  if (copyBtn) copyBtn.addEventListener("click", () => {
-    const content = document.getElementById("daily-summary-content")?.innerText;
-    if (content) copyText(content);
-  });
+  .task-card,
+  .result-card,
+  .schedule-card {
+    padding: 18px;
+    border-radius: 12px;
+  }
 
-  // 启动 23:00 定时检查（每分钟检查一次）
-  checkAutoSummary();
-  setInterval(checkAutoSummary, 60000);
-}
+  .task-card.compact {
+    align-items: stretch;
+  }
 
-function checkAutoSummary() {
-  const now = new Date();
-  const key = todayKey();
+  .task-card.compact .fit {
+    width: 100%;
+  }
 
-  // 检查是否已到 23:00 且今天还没汇总过
-  if (now.getHours() === 23 && now.getMinutes() === 0) {
-    const log = state.dailyLogs[key];
-    if (!log || !log._autoSummarized) {
-      ensureTodayLog();
-      state.dailyLogs[key]._autoSummarized = true;
-      saveState();
-      // 如果当前在总结面板，自动刷新
-      if (document.getElementById("panel-daily-summary")?.classList.contains("is-active")) {
-        renderDailySummary();
-      }
-      toast("⏰ 每日 23:00 自动总结已生成");
-    }
-  } else if (now.getHours() === 0 && now.getMinutes() === 0) {
-    // 跨天时清除当天标记，重置自动汇总状态
-    const log = state.dailyLogs[key];
-    if (log?._autoSummarized) {
-      delete log._autoSummarized;
-      saveState();
-    }
+  .schedule-item {
+    grid-template-columns: 1fr;
+  }
+
+  .schedule-actions {
+    justify-content: flex-start;
+  }
+
+  .list-grid {
+    grid-template-columns: 1fr;
   }
 }
 
-function renderDailySummary() {
-  const container = document.getElementById("daily-summary-content");
-  const titleEl = document.getElementById("summary-date-title");
-  if (!container) return;
-
-  const key = todayKey();
-  const log = state.dailyLogs[key] || { wechat: 0, douyin: 0, xhs: 0, study: 0, novel: 0, dance: 0, music: 0, reading: 0 };
-
-  const workTotal = log.wechat + log.douyin + log.xhs + log.study + log.novel;
-  const funTotal = log.dance + log.music + log.reading;
-  const total = workTotal + funTotal;
-
-  if (titleEl) {
-    titleEl.textContent = `${key} 数据总结`;
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
-
-  const date = new Date();
-  const dayOfWeek = ["日", "一", "二", "三", "四", "五", "六"][date.getDay()];
-
-  container.innerHTML = `
-    <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;">
-      <article class="list-item" style="text-align:center;">
-        <span style="font-size:12px;color:var(--muted);">总操作次数</span>
-        <strong style="font-size:32px;color:var(--work);">${total}</strong>
-      </article>
-      <article class="list-item" style="text-align:center;">
-        <span style="font-size:12px;color:var(--muted);">工作产出</span>
-        <strong style="font-size:32px;color:var(--work);">${workTotal}</strong>
-      </article>
-      <article class="list-item" style="text-align:center;">
-        <span style="font-size:12px;color:var(--muted);">娱乐活动</span>
-        <strong style="font-size:32px;color:var(--fun);">${funTotal}</strong>
-      </article>
-    </div>
-    <div class="task-card">
-      <div class="card-head">
-        <span class="label">工作</span>
-        <h2>提升自己 · 详细数据</h2>
-      </div>
-      <div style="display:grid;gap:8px;">
-        ${renderLogItem("📱 公众号分析", log.wechat, "var(--work)")}
-        ${renderLogItem("🎵 抖音分析", log.douyin, "var(--work)")}
-        ${renderLogItem("📕 小红书分析", log.xhs, "var(--work)")}
-        ${renderLogItem("📚 小说查询", log.novel, "var(--work)")}
-        ${renderLogItem("📖 学习摘取", log.study, "var(--work)")}
-      </div>
-    </div>
-    <div class="task-card">
-      <div class="card-head">
-        <span class="label fun">娱乐</span>
-        <h2>做个有趣的大人 · 详细数据</h2>
-      </div>
-      <div style="display:grid;gap:8px;">
-        ${renderLogItem("💃 跳舞排期", log.dance, "var(--fun)")}
-        ${renderLogItem("🎹 音乐排期", log.music, "var(--fun)")}
-        ${renderLogItem("📖 读书添加", log.reading, "var(--fun)")}
-      </div>
-    </div>
-    <div class="task-card" style="background:linear-gradient(135deg,#f8f6ff,#ede8ff);border-color:#d5c8f0;">
-      <div class="card-head">
-        <span class="label" style="background:#ede8ff;color:#7c5ce7;">💡</span>
-        <h2>每日小结</h2>
-      </div>
-      <p style="color:var(--muted);line-height:1.8;">
-        ${total === 0
-          ? `今天是 ${key}（周${dayOfWeek}），暂无操作记录。开始工作或娱乐吧，每天积累一点点！`
-          : `今天是 ${key}（周${dayOfWeek}），你共完成 <strong style="color:var(--ink);">${total}</strong> 次操作。`
-        }
-        ${workTotal > 0 ? `<br>工作方面完成了 <strong style="color:var(--work);">${workTotal}</strong> 次内容分析与学习，继续保持！` : ""}
-        ${funTotal > 0 ? `<br>娱乐方面完成了 <strong style="color:var(--fun);">${funTotal}</strong> 次活动排期与阅读添加，生活需要平衡。` : ""}
-        ${total >= 5 ? `<br>🎉 今天效率很高，给自己点个赞！` : total > 0 ? `<br>👍 不错的一天，明天继续加油！` : ""}
-      </p>
-    </div>
-  `;
-}
-
-function renderLogItem(label, count, color) {
-  const pct = Math.min(count * 20, 100);
-  return `
-    <div style="display:flex;align-items:center;gap:12px;">
-      <span style="min-width:110px;font-size:14px;">${label}</span>
-      <div style="flex:1;background:#e8eaef;border-radius:4px;height:8px;">
-        <div style="background:${color};height:8px;border-radius:4px;width:${pct}%;transition:width 0.3s;"></div>
-      </div>
-      <strong style="min-width:24px;text-align:right;font-size:14px;">${count}</strong>
-    </div>
-  `;
 }
