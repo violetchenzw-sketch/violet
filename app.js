@@ -304,8 +304,6 @@ const novels = [
     url: "https://book.douban.com/subject/36328762/",
     read: !!readStatus["太白金星有点烦"]
   },
-    {
-      title: "我在北京送快递",
  {
   title: "我在北京送快递",
   author: "胡安焉",
@@ -314,8 +312,6 @@ const novels = [
   url: "https://book.douban.com/subject/36274718/",
   read: !!readStatus["我在北京送快递"]
 },
-    {
-      title: "长安的荔枝",
    {
   title: "长安的荔枝",
   author: "马伯庸",
@@ -324,8 +320,6 @@ const novels = [
   url: "https://book.douban.com/subject/36104107/",
   read: !!readStatus["长安的荔枝"]
 },
-    {
-      title: "额尔古纳河右岸",
  {
   title: "额尔古纳河右岸",
   author: "迟子建",
@@ -334,8 +328,6 @@ const novels = [
   url: "https://book.douban.com/subject/1437752/",
   read: !!readStatus["额尔古纳河右岸"]
 },
-    {
-      title: "活着",
       {
   title: "活着",
   author: "余华",
@@ -344,16 +336,13 @@ const novels = [
   url: "https://book.douban.com/subject/4913064/",
   read: !!readStatus["活着"]
 },
-    {
-      title: "盐镇",
-      {
   title: "盐镇",
   author: "易小荷",
   rating: "8.6",
   summary: "在四川南部的古老盐业小镇，女人们过着看似波澜不惊实则惊心动魄的生活。十六七岁就步入婚姻，怀孕、家暴、背叛……她们默默忍受着，直到耗尽一生。古镇的兴衰、婚姻的变故、代际的创伤，都汇聚在这些女性的命运之中。作者历时一年沉浸式调查，打捞出十二位女性在城乡之间、历史与现实中挣扎求存的故事。",
   url: "https://book.douban.com/subject/36247024/",
   read: !!readStatus["盐镇"]
-}]
+}
   ];
 
   // 过滤掉已读的
