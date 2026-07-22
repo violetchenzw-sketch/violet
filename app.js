@@ -11,19 +11,44 @@ const tabs = {
   music:["fun","音乐练习计划","兴趣与生活 / 声音","让喜欢一首歌的理由也被留下。"],
   reading:["fun","每月阅读计划","兴趣与生活 / 阅读","从书单走向真正想回答的问题。"],
   "daily-summary":["summary","每日思考总结","我的观察 / 今日","观察注意力、情绪和行动的流向。"],
-  library:["summary","每日内容库","我的观察 / 内容库","回看每天上传的内容，以及当时的思考。"]
+  library:["summary","灵感档案馆","我的观察 / 内容回看","按日期找到以前上传的内容与当时的思考。"],
+  "record-detail":["summary","记录详情","我的观察 / 内容详情","完整回看文件、情绪、判断与下一步行动。"]
 };
 const firstTabs={work:"wechat",fun:"dance",summary:"daily-summary"};
 const state=loadState();
-let libraryDateFilter="all";
+let activeDetailUrls=[];
+let activePreviewUrls=[];
 
 document.addEventListener("DOMContentLoaded",async()=>{
   bindNavigation();bindFiles();bindForms();bindGlobalActions();renderEmptyResults();renderNovels();renderPlans();updateStats();
-  await openDB();switchTab("wechat");
+  try{await openDB()}catch{toast("浏览器文件库暂不可用，文字记录仍可保存")}
+  switchTab("wechat");
 });
 
 function defaultState(){return{records:[],plans:{dance:[],music:[],reading:[]},readNovels:{}}}
-function loadState(){try{const data=JSON.parse(localStorage.getItem(STORAGE_KEY)||"{}");return{...defaultState(),...data,plans:{...defaultState().plans,...(data.plans||{})}}}catch{return defaultState()}}
+function loadState(){
+  try{
+    const data=JSON.parse(localStorage.getItem(STORAGE_KEY)||"{}");
+    const merged={...defaultState(),...data,records:Array.isArray(data.records)?data.records:[],plans:{...defaultState().plans,...(data.plans||{})},readNovels:{...(data.readNovels||{})}};
+    if(!merged.legacyMigrated){
+      const legacy=JSON.parse(localStorage.getItem("goal-assistant-state")||"{}");
+      let imported=0;
+      ["dance","music","reading"].forEach(type=>{
+        const oldItems=Array.isArray(legacy[type])?legacy[type]:[];
+        oldItems.forEach(item=>{
+          if(merged.plans[type].some(current=>current.title===item.title))return;
+          const normalized={id:`legacy-${type}-${item.id||newId()}`,date:legacyDate(item),createdAt:new Date().toISOString(),type,title:item.title||"旧版记录",author:item.author||"",category:item.source||item.period||"旧版导入",emotion:"未记录",reason:"从旧版本恢复的计划记录",action:"",status:item.status||"pending",files:[],legacy:true};
+          merged.plans[type].push(normalized);merged.records.push({...normalized,viewpoint:"旧版记录未保存原始附件",url:""});imported+=1;
+        });
+      });
+      try{merged.readNovels={...JSON.parse(localStorage.getItem("novelReadStatus")||"{}"),...merged.readNovels}}catch{}
+      merged.legacyMigrated=true;merged.legacyImportCount=imported;merged.legacyOutputCount=Number(legacy.outputs)||0;
+      localStorage.setItem(STORAGE_KEY,JSON.stringify(merged));
+    }
+    return merged;
+  }catch{return defaultState()}
+}
+function legacyDate(item){const number=Number(item?.id);if(Number.isFinite(number)&&number>1000000000000){const d=new Date(number);return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`}return todayKey()}
 function saveState(){localStorage.setItem(STORAGE_KEY,JSON.stringify(state))}
 function todayKey(){const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`}
 function newId(){return `${Date.now()}-${Math.random().toString(16).slice(2)}`}
@@ -34,7 +59,7 @@ function bindNavigation(){
     document.querySelectorAll(".nav-group").forEach(g=>{g.classList.remove("is-open");g.querySelector("[data-mode-button]")?.setAttribute("aria-expanded","false")});
     if(!wasOpen){group.classList.add("is-open");btn.setAttribute("aria-expanded","true");const activeMode=tabs[currentTab()]?.[0];if(activeMode!==btn.dataset.modeButton)switchTab(firstTabs[btn.dataset.modeButton])}
   }));
-  document.querySelectorAll("[data-tab]").forEach(btn=>btn.addEventListener("click",()=>switchTab(btn.dataset.tab)));
+  document.querySelectorAll("[data-tab]").forEach(btn=>btn.addEventListener("click",()=>{if(btn.dataset.tab==="library")setLibraryDate("all");switchTab(btn.dataset.tab)}));
 }
 function currentTab(){return document.querySelector(".panel.is-active")?.id.replace("panel-","")||"wechat"}
 function switchTab(name){
@@ -89,13 +114,39 @@ function deletePlan(type,id){state.plans[type]=state.plans[type].filter(x=>x.id!
 
 function updateStats(){const today=state.records.filter(r=>r.date===todayKey());document.getElementById("today-count").textContent=today.length;document.getElementById("action-count").textContent=today.filter(r=>r.action).length;const books=state.plans.reading||[];document.getElementById("reading-progress").textContent=`${books.filter(b=>b.status==="done").length}/4`;const emotions=frequency(today.map(r=>r.emotion).filter(Boolean));document.getElementById("emotion-stat").textContent=emotions[0]?.[0]||"—"}
 function frequency(values){const m={};values.forEach(v=>m[v]=(m[v]||0)+1);return Object.entries(m).sort((a,b)=>b[1]-a[1])}
-function renderSummary(){const today=state.records.filter(r=>r.date===todayKey());document.getElementById("summary-date").textContent=`${todayKey()} · 每日总结`;const cats=frequency(today.map(r=>r.category));const emotions=frequency(today.map(r=>r.emotion));const actionRate=today.length?Math.round(today.filter(r=>r.action).length/today.length*100):0;document.getElementById("insight-grid").innerHTML=`<article class="insight-card"><span>注意力方向</span><strong>${escapeHtml(cats[0]?.[0]||"等待记录")}</strong><p>${cats.length>1?`你还关注了 ${cats.slice(1,3).map(x=>x[0]).join("、")}。`:"多记录几条，就能看见稳定偏好。"}</p></article><article class="insight-card"><span>情绪倾向</span><strong>${escapeHtml(emotions[0]?.[0]||"等待记录")}</strong><p>${emotions[0]?`这种情绪今天出现了 ${emotions[0][1]} 次。`:"内容为什么打动你，往往藏在情绪里。"}</p></article><article class="insight-card"><span>行动转化</span><strong>${actionRate}%</strong><p>${actionRate>=60?"你很擅长把输入转化为下一步。":"可以尝试给每条收藏写一个最小行动。"}</p></article>`;const feed=document.getElementById("daily-feed");feed.innerHTML=today.length?today.map(r=>`<article class="feed-item"><div><b>${escapeHtml(r.title)}</b><br><small>${escapeHtml(r.category)} · ${escapeHtml(r.emotion)}</small></div><button data-open-record="${r.id}">查看内容 →</button></article>`).join(""):`<div class="empty-result"><div><b>今天还没有记录</b><p>从任意子菜单保存一条内容，就会出现在这里。</p></div></div>`;feed.querySelectorAll("[data-open-record]").forEach(b=>b.onclick=()=>{libraryDateFilter=todayKey();switchTab("library");setTimeout(()=>document.querySelector(`[data-view-record="${b.dataset.openRecord}"]`)?.scrollIntoView({behavior:"smooth",block:"center"}),50)})}
+function renderSummary(){const today=state.records.filter(r=>r.date===todayKey());document.getElementById("summary-date").textContent=`${todayKey()} · 每日总结`;const cats=frequency(today.map(r=>r.category));const emotions=frequency(today.map(r=>r.emotion));const actionRate=today.length?Math.round(today.filter(r=>r.action).length/today.length*100):0;document.getElementById("insight-grid").innerHTML=`<article class="insight-card"><span>注意力方向</span><strong>${escapeHtml(cats[0]?.[0]||"等待记录")}</strong><p>${cats.length>1?`你还关注了 ${cats.slice(1,3).map(x=>x[0]).join("、")}。`:"多记录几条，就能看见稳定偏好。"}</p></article><article class="insight-card"><span>情绪倾向</span><strong>${escapeHtml(emotions[0]?.[0]||"等待记录")}</strong><p>${emotions[0]?`这种情绪今天出现了 ${emotions[0][1]} 次。`:"内容为什么打动你，往往藏在情绪里。"}</p></article><article class="insight-card"><span>行动转化</span><strong>${actionRate}%</strong><p>${actionRate>=60?"你很擅长把输入转化为下一步。":"可以尝试给每条收藏写一个最小行动。"}</p></article>`;const feed=document.getElementById("daily-feed");feed.innerHTML=today.length?today.map(r=>`<article class="feed-item"><div><b>${escapeHtml(r.title)}</b><br><small>${escapeHtml(r.category)} · ${escapeHtml(r.emotion)}</small></div><button data-open-record="${r.id}">查看完整记录 →</button></article>`).join(""):`<div class="empty-result"><div><b>今天还没有记录</b><p>从任意子菜单保存一条内容，就会出现在这里。</p></div></div>`;feed.querySelectorAll("[data-open-record]").forEach(b=>b.onclick=()=>viewRecord(b.dataset.openRecord))}
 
-function bindGlobalActions(){document.getElementById("refresh-novels").onclick=()=>{renderNovels();toast("推荐理由已刷新")};document.getElementById("open-today-library").onclick=()=>{libraryDateFilter=todayKey();switchTab("library")};document.getElementById("library-filter").onchange=renderLibrary;document.getElementById("viewer-close").onclick=closeViewer;document.getElementById("viewer").addEventListener("click",e=>{if(e.target.id==="viewer")closeViewer()})}
-async function renderLibrary(){const target=document.getElementById("content-library");const type=document.getElementById("library-filter").value;let records=state.records.filter(r=>(type==="all"||r.type===type)&&(libraryDateFilter==="all"||r.date===libraryDateFilter));if(!records.length){target.innerHTML=`<div class="empty-result"><div><b>暂无内容</b><p>上传后的文件和思考会保存在这里。</p></div></div>`;return}target.innerHTML=records.map(r=>`<article class="content-card" data-record-card="${r.id}"><div class="content-preview" data-preview="${r.id}">${previewIcon(r)}</div><div class="content-body"><div class="tag-row"><span class="tag">${escapeHtml(r.category)}</span><span class="tag">${escapeHtml(r.emotion)}</span></div><h3>${escapeHtml(r.title)}</h3><p>${escapeHtml(r.reason||"暂无推荐理由")}</p><div class="content-actions"><button class="small-button primary" data-view-record="${r.id}">查看内容</button><button class="small-button" data-delete-record="${r.id}">删除</button></div></div></article>`).join("");for(const r of records)await hydratePreview(r);target.querySelectorAll("[data-view-record]").forEach(b=>b.onclick=()=>viewRecord(b.dataset.viewRecord));target.querySelectorAll("[data-delete-record]").forEach(b=>b.onclick=()=>deleteRecord(b.dataset.deleteRecord))}
+function setLibraryDate(value){const select=document.getElementById("library-date");if(select)select.value=value}
+function bindGlobalActions(){
+  document.getElementById("refresh-novels").onclick=()=>{renderNovels();toast("推荐理由已刷新")};
+  document.getElementById("open-today-library").onclick=()=>{setLibraryDate("today");switchTab("library")};
+  document.getElementById("quick-library").onclick=()=>{setLibraryDate("all");switchTab("library")};
+  document.getElementById("library-filter").onchange=renderLibrary;document.getElementById("library-date").onchange=renderLibrary;document.getElementById("library-search").oninput=renderLibrary;
+  document.getElementById("reset-library-filter").onclick=()=>{document.getElementById("library-filter").value="all";document.getElementById("library-date").value="all";document.getElementById("library-search").value="";renderLibrary()};
+  document.getElementById("back-library").onclick=()=>switchTab("library");document.getElementById("viewer-close").onclick=closeViewer;document.getElementById("viewer").addEventListener("click",e=>{if(e.target.id==="viewer")closeViewer()})
+}
+function matchesDate(record,mode){if(mode==="all")return true;const stamp=new Date(`${record.date}T23:59:59`);const today=new Date(`${todayKey()}T23:59:59`);const days=(today-stamp)/86400000;if(mode==="today")return record.date===todayKey();if(mode==="7days")return days>=0&&days<7;if(mode==="30days")return days>=0&&days<30;return true}
+function recordSearchText(record){return [record.title,record.category,record.emotion,record.reason,record.viewpoint,record.action,record.type].join(" ").toLowerCase()}
+async function renderLibrary(){
+  const target=document.getElementById("content-library");activePreviewUrls.forEach(url=>URL.revokeObjectURL(url));activePreviewUrls=[];
+  const type=document.getElementById("library-filter").value;const dateMode=document.getElementById("library-date").value;const query=document.getElementById("library-search").value.trim().toLowerCase();
+  const records=state.records.filter(r=>(type==="all"||r.type===type)&&matchesDate(r,dateMode)&&(!query||recordSearchText(r).includes(query))).sort((a,b)=>String(b.createdAt||b.date).localeCompare(String(a.createdAt||a.date)));
+  document.getElementById("library-total").textContent=records.length;
+  const legacyCount=state.legacyImportCount||0;const legacyOutputs=state.legacyOutputCount||0;const notice=document.getElementById("legacy-notice");if(legacyCount||legacyOutputs){notice.hidden=false;notice.textContent=`已从旧版本恢复 ${legacyCount} 条计划记录${legacyOutputs?`，并发现 ${legacyOutputs} 次分析操作记录`:""}。旧版本没有保存原始附件，因此旧内容只能回看已保存的文字；本版本新上传的文件会进入详情页。`}else notice.hidden=true;
+  if(!records.length){target.innerHTML=`<div class="empty-result"><div><b>没有匹配的记录</b><p>试试“显示全部”，或换一个日期和关键词。</p></div></div>`;return}
+  target.innerHTML=records.map(r=>`<article class="content-card" data-record-card="${r.id}"><div class="content-preview" data-preview="${r.id}">${previewIcon(r)}</div><div class="content-body"><div class="content-meta"><span class="tag">${escapeHtml(r.category)}</span><span class="date-label">${escapeHtml(r.date||"旧版")}</span></div><h3>${escapeHtml(r.title)}</h3><p>${escapeHtml(r.reason||"暂无推荐理由")}</p><small class="file-count">${r.files?.length?`${r.files.length} 个附件 · `:""}${r.url?"含在线视频链接":"本地记录"}</small><div class="content-actions"><button class="small-button primary" data-view-record="${r.id}">进入详情页</button><button class="small-button" data-delete-record="${r.id}">删除</button></div></div></article>`).join("");
+  for(const r of records)await hydratePreview(r);target.querySelectorAll("[data-view-record]").forEach(b=>b.onclick=()=>viewRecord(b.dataset.viewRecord));target.querySelectorAll("[data-delete-record]").forEach(b=>b.onclick=()=>deleteRecord(b.dataset.deleteRecord))
+}
 function previewIcon(r){if(r.url)return"↗";const mime=r.files?.[0]?.type||"";if(mime.startsWith("video"))return"▶";if(mime.startsWith("audio"))return"♫";if(mime.includes("pdf"))return"PDF";if(mime.startsWith("image"))return"▧";return"✦"}
-async function hydratePreview(record){const file=record.files?.[0];if(!file||!file.type.startsWith("image"))return;const stored=await dbGet(file.id);if(!stored)return;const url=URL.createObjectURL(stored.blob);const target=document.querySelector(`[data-preview="${record.id}"]`);if(target)target.innerHTML=`<img src="${url}" alt="${escapeHtml(record.title)}">`}
-async function viewRecord(id){const r=state.records.find(x=>x.id===id);if(!r)return;if(r.url&&!r.files?.length){window.open(r.url,"_blank","noopener");return}const file=r.files?.[0];if(!file){toast("这条记录没有上传文件");return}const stored=await dbGet(file.id);if(!stored){toast("本地文件已不存在");return}const url=URL.createObjectURL(stored.blob);const box=document.getElementById("viewer-content");if(file.type.startsWith("image"))box.innerHTML=`<img src="${url}" alt="${escapeHtml(r.title)}">`;else if(file.type.startsWith("video"))box.innerHTML=`<video src="${url}" controls playsinline></video>`;else if(file.type.startsWith("audio"))box.innerHTML=`<audio src="${url}" controls></audio>`;else if(file.type.includes("pdf"))box.innerHTML=`<iframe src="${url}" title="${escapeHtml(r.title)}"></iframe>`;else box.innerHTML=`<a href="${url}" download="${escapeHtml(file.name)}" style="color:white">下载文件</a>`;document.getElementById("viewer").showModal()}
+async function hydratePreview(record){const file=record.files?.[0];if(!file||!file.type.startsWith("image"))return;try{const stored=await dbGet(file.id);if(!stored)return;const url=URL.createObjectURL(stored.blob);activePreviewUrls.push(url);const target=document.querySelector(`[data-preview="${record.id}"]`);if(target)target.innerHTML=`<img src="${url}" alt="${escapeHtml(record.title)}">`}catch{}}
+async function viewRecord(id){
+  const r=state.records.find(x=>x.id===id);if(!r)return;activeDetailUrls.forEach(url=>URL.revokeObjectURL(url));activeDetailUrls=[];switchTab("record-detail");
+  document.getElementById("record-detail-hero").innerHTML=`<span class="label purple">${escapeHtml(r.type)} · ${escapeHtml(r.date||"旧版记录")}</span><h2>${escapeHtml(r.title)}</h2><div class="tag-row"><span class="tag">${escapeHtml(r.category||"未分类")}</span><span class="tag">情绪 · ${escapeHtml(r.emotion||"未记录")}</span></div>`;
+  document.getElementById("record-thinking").innerHTML=`${thoughtSection("为什么留下",r.reason||"暂未填写")}${thoughtSection("你的判断",r.viewpoint||"暂未形成观点")}${thoughtSection("下一步行动",r.action||"还没有写下行动")}${r.url?`<div class="record-link"><b>原始链接</b><a href="${escapeHtml(r.url)}" target="_blank" rel="noopener">打开在线视频 / 网页 ↗</a></div>`:""}`;
+  const gallery=document.getElementById("record-file-gallery");gallery.innerHTML="";
+  if(!r.files?.length&&!r.url){gallery.innerHTML=`<div class="missing-file"><b>这是一条文字记录</b><p>旧版本只保存了计划文字，没有保存原始附件。</p></div>`;return}
+  for(const file of r.files||[]){let stored;try{stored=await dbGet(file.id)}catch{}if(!stored){gallery.insertAdjacentHTML("beforeend",`<div class="missing-file"><b>${escapeHtml(file.name||"附件")}</b><p>本地附件已被浏览器清理，文字信息仍然保留。</p></div>`);continue}const url=URL.createObjectURL(stored.blob);activeDetailUrls.push(url);const card=document.createElement("article");card.className="detail-file";const title=document.createElement("h3");title.textContent=file.name||"附件";card.appendChild(title);if(file.type.startsWith("image"))card.insertAdjacentHTML("beforeend",`<img src="${url}" alt="${escapeHtml(file.name)}">`);else if(file.type.startsWith("video"))card.insertAdjacentHTML("beforeend",`<video src="${url}" controls playsinline></video>`);else if(file.type.startsWith("audio"))card.insertAdjacentHTML("beforeend",`<audio src="${url}" controls></audio>`);else if(file.type.includes("pdf"))card.insertAdjacentHTML("beforeend",`<iframe src="${url}" title="${escapeHtml(file.name)}"></iframe>`);else card.insertAdjacentHTML("beforeend",`<a class="download-file" href="${url}" download="${escapeHtml(file.name)}">下载附件</a>`);gallery.appendChild(card)}
+}
 function closeViewer(){document.getElementById("viewer").close();document.getElementById("viewer-content").innerHTML=""}
 async function deleteRecord(id){const record=state.records.find(r=>r.id===id);if(record)for(const f of record.files||[])await dbDelete(f.id);state.records=state.records.filter(r=>r.id!==id);saveState();renderLibrary();updateStats();toast("记录已删除")}
 

@@ -32,7 +32,7 @@
     </aside>
 
     <main class="main">
-      <header class="topbar"><div><p id="mode-kicker">工作与成长 / 观察</p><h1 id="page-title">公众号内容拆解</h1><p class="page-intro" id="page-intro">不仅记录内容，也记录它为什么打动你。</p></div><div class="status-pill"><i></i>本地私密保存</div></header>
+      <header class="topbar"><div><p id="mode-kicker">工作与成长 / 观察</p><h1 id="page-title">公众号内容拆解</h1><p class="page-intro" id="page-intro">不仅记录内容，也记录它为什么打动你。</p></div><div class="top-actions"><div class="status-pill"><i></i>本地私密保存</div><button class="quick-library" id="quick-library" type="button"><span>◉</span>回看历史内容</button></div></header>
       <section class="dashboard-strip">
         <article class="stat stat-blue"><span>今日记录</span><strong id="today-count">0</strong><small>条内容与想法</small></article>
         <article class="stat stat-orange"><span>行动转化</span><strong id="action-count">0</strong><small>个下一步行动</small></article>
@@ -85,7 +85,9 @@
 
         <section class="panel" id="panel-daily-summary"><div class="workbench"><div class="summary-hero"><div><span class="label purple">今日观察</span><h2 id="summary-date">每日总结</h2><p>从上传内容、情绪与行动中，观察你的注意力流向。</p></div><button class="purple-button fit" id="open-today-library" type="button">查看今日内容</button></div><div id="insight-grid" class="insight-grid"></div><div id="daily-feed" class="daily-feed"></div></div></section>
 
-        <section class="panel" id="panel-library"><div class="workbench"><div class="library-head"><div><span class="label green">内容库</span><h2>你留下的内容与思考</h2><p>图片、视频、音频和 PDF 都保存在当前浏览器中。</p></div><div class="filter-row"><select class="field" id="library-filter"><option value="all">全部分类</option><option value="wechat">公众号</option><option value="douyin">视频</option><option value="xhs">小红书</option><option value="study">学习</option><option value="dance">跳舞</option><option value="music">音乐</option><option value="reading">阅读</option></select></div></div><div class="content-library" id="content-library"></div></div></section>
+        <section class="panel" id="panel-library"><div class="workbench"><div class="library-head"><div><span class="label green">内容回看</span><h2>你的灵感档案馆</h2><p>按日期与分类查找以前上传的内容，点击卡片进入完整详情页。</p></div><div class="library-total"><strong id="library-total">0</strong><small>条历史记录</small></div></div><div class="library-toolbar"><input class="field" id="library-search" placeholder="搜索标题、分类或思考内容"><select class="field" id="library-date"><option value="all">全部日期</option><option value="today">今天</option><option value="7days">最近 7 天</option><option value="30days">最近 30 天</option></select><select class="field" id="library-filter"><option value="all">全部分类</option><option value="wechat">公众号</option><option value="douyin">视频</option><option value="xhs">小红书</option><option value="study">学习</option><option value="dance">跳舞</option><option value="music">音乐</option><option value="reading">阅读</option></select><button class="secondary-button fit" id="reset-library-filter" type="button">显示全部</button></div><div class="library-notice" id="legacy-notice" hidden></div><div class="content-library" id="content-library"></div></div></section>
+
+        <section class="panel" id="panel-record-detail"><div class="record-detail-shell"><button class="back-library" id="back-library" type="button">← 返回内容库</button><div class="record-detail-hero" id="record-detail-hero"></div><div class="record-file-gallery" id="record-file-gallery"></div><div class="record-thinking" id="record-thinking"></div></div></section>
       </div>
     </main>
   </div>
